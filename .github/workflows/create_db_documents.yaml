@@ -1,0 +1,48 @@
+name: Create DB Documents
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  create-db-docs:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root_password
+          MYSQL_DATABASE: sample_db
+        ports:   
+          - 3306:3306         
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Flywayによるマイグレーションの実行
+      - name: Run Flyway migrations
+        run: |
+          docker run --rm -v ${{ github.workspace }}/migrations:/flyway/sql flyway/flyway \
+          -url=jdbc:mysql://127.0.0.1:3306/sample_db -user=root -password=root_password migrate
+
+      # SchemaSpyによるDBドキュメントの生成
+      - name: Generate SchemaSpy HTML
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/output schemaspy/schemaspy \
+          -t mysql -host 127.0.0.1 -port 3306 -db sample_db -u root -p root_password
+
+      # AWSの設定を行い、S3にドキュメントをアップロード
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-1
+
+      - name: Sync to S3
+        run: |
+          aws s3 sync /output s3://your-bucket-name --delete
+
+      
+
