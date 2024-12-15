@@ -20,7 +20,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Flywayによるマイグレーションの実行
+      # Flywayによるマイグレーションの実行.
       - name: Run Flyway migrations
         run: |
           docker run --rm -v ${{ github.workspace }}/migrations:/flyway/sql flyway/flyway \
