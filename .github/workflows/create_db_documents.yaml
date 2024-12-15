@@ -23,10 +23,8 @@ jobs:
       # Flywayによるマイグレーションの実行.
       - name: Run Flyway migrations
         run: |
-- name: Run Flyway migrations
-  run: |
-        docker run --rm -v ${{ github.workspace }}/migrations:/flyway/sql flyway/flyway \
-        -url=jdbc:mysql://127.0.0.1:3306/sample_db -user=root -password=root_password migrate
+          docker run --rm -v ${{ github.workspace }}/migrations:/flyway/sql flyway/flyway \
+          -url=jdbc:mysql://127.0.0.1:3306/sample_db -user=root -password=root_password migrate
 
       # SchemaSpyによるDBドキュメントの生成
       - name: Generate SchemaSpy HTML
