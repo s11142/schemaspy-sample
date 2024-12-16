@@ -1,4 +1,5 @@
-name: Create DB Documents
+# .github/workflows/doc.yml
+name: Document
 
 on:
   push:
@@ -6,42 +7,14 @@ on:
       - main
 
 jobs:
-  create-db-docs:
+  doc:
     runs-on: ubuntu-latest
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: root_password
-          MYSQL_DATABASE: sample_db
-        ports:   
-          - 3306:3306         
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Flywayによるマイグレーションの実行.
-      - name: Run Flyway migrations
-        run: |
-          docker run --rm -v ${{ github.workspace }}/migrations:/flyway/sql flyway/flyway \
-          -url=jdbc:mysql://127.0.0.1:3306/sample_db -user=root -password=root_password migrate
-
-      # SchemaSpyによるDBドキュメントの生成
-      - name: Generate SchemaSpy HTML
-        run: |
-          docker run --rm -v ${{ github.workspace }}:/output schemaspy/schemaspy \
-          -t mysql -host 127.0.0.1 -port 3306 -db sample_db -u root -p root_password
-
-      # AWSの設定を行い、S3にドキュメントをアップロード
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::723516807651:role/schemaspy-sample-role
-          aws-region: ap-northeast-1
-
-      - name: Sync to S3
-        run: |
-          aws s3 sync /output s3://your-bucket-name --delete
-
-      
-
+      -
+        name: Checkout .tbls.yml
+        uses: actions/checkout@v3
+      -
+        uses: k1low/setup-tbls@v1
+      -
+        name: Run tbls for generate database document
+        run: tbls doc
